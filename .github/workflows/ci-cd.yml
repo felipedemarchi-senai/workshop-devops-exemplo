@@ -57,7 +57,7 @@ jobs:
           GIST_ID: 27bfb7ba18da11fec73a66f189ac7ea3
         run: |
           COVERAGE=$(sed -n 's/.*line-rate="\([^"]*\)".*/\1/p' coverage.xml)
-          PERCENT=$(printf "%.0f" $(echo "$COVERAGE * 100" | bc -l))
+          PERCENT=$(printf "%.0f" $(echo "$COVERAGE" | bc -l))
           
           echo "Coverage: $PERCENT%"
           

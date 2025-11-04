@@ -43,6 +43,7 @@ jobs:
           path: coverage.xml
       
       - name: Save Coverage Percentage
+        id: coverage_step
         run: |
           sudo apt-get update && sudo apt-get install -y libxml2-utils
           RAW=$(xmllint --xpath "string(/coverage/@line-rate)" coverage.xml)
@@ -60,10 +61,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GIST_ID: 27bfb7ba18da11fec73a66f189ac7ea3
         run: |
-          COV=${{ steps.tests.outputs.coverage }}
-          PERCENT=$(printf "%.0f" $(echo "$COVERAGE" | bc -l))
+          COV=${{ steps.coverage_step.outputs.coverage }}
+          PERCENT=$(printf "%.0f" $(echo "$COV" | bc -l))
           
           echo "Coverage: $COV%"
+          echo "Percent: $PERCENT%"
           
           JSON=$(jq -n --arg cov "$PERCENT" '{"files": {"coverage.json": {"content": $cov}}}')
           

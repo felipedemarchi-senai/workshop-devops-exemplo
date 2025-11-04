@@ -50,16 +50,24 @@ jobs:
           echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
 
 
-      - name: Upload Coverage Badge to Gist
+      - name: Update coverage in Gist
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GIST_ID: 27bfb7ba18da11fec73a66f189ac7ea3
         run: |
-          COVERAGE=$(grep -oP '(?<=line-rate=")[0-9.]+(?=")' coverage.xml)
-          PERCENT=$(echo "$COVERAGE*100" | bc | cut -d'.' -f1)
-          curl -X POST "https://api.github.com/gists/27bfb7ba18da11fec73a66f189ac7ea3" \
-          -H "Authorization: token $GH_TOKEN" \
-          -d "{\"files\": {\"coverage.json\": {\"content\": \"$PERCENT\"}}}"
+          COVERAGE=$(sed -n 's/.*line-rate="\([^"]*\)".*/\1/p' coverage.xml)
+          PERCENT=$(printf "%.0f" $(echo "$COVERAGE * 100" | bc -l))
+          
+          echo "Coverage: $PERCENT%"
+          
+          JSON=$(jq -n --arg cov "$PERCENT" '{"files": {"coverage.json": {"content": $cov}}}')
+          
+          curl -X PATCH \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$JSON" \
+            "https://api.github.com/gists/$GIST_ID"
 
 
 

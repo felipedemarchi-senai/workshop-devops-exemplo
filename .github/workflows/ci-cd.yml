@@ -45,9 +45,13 @@ jobs:
       - name: Save Coverage Percentage
         run: |
           sudo apt-get update && sudo apt-get install -y libxml2-utils
-          COVERAGE=$(xmllint --xpath "string(/coverage/@line-rate)" coverage.xml)
-          echo "Coverage: $COVERAGE"
-          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          RAW=$(xmllint --xpath "string(/coverage/@line-rate)" coverage.xml)
+          PERCENT=$(printf "%.0f" "$(echo "$RAW * 100" | bc -l)")
+          
+          echo "Coverage raw value: $RAW"
+          echo "Coverage percent: $PERCENT%"
+          
+          echo "coverage=$PERCENT" >> $GITHUB_OUTPUT
 
 
       - name: Update coverage in Gist
@@ -56,10 +60,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GIST_ID: 27bfb7ba18da11fec73a66f189ac7ea3
         run: |
-          COVERAGE=$(sed -n 's/.*line-rate="\([^"]*\)".*/\1/p' coverage.xml)
+          COV=${{ steps.tests.outputs.coverage }}
           PERCENT=$(printf "%.0f" $(echo "$COVERAGE" | bc -l))
           
-          echo "Coverage: $PERCENT%"
+          echo "Coverage: $COV%"
           
           JSON=$(jq -n --arg cov "$PERCENT" '{"files": {"coverage.json": {"content": $cov}}}')
           
@@ -76,7 +80,10 @@ jobs:
     name: Build & Deploy
     runs-on: ubuntu-latest
     needs: tests   # Só roda se os testes passarem
-    if: github.ref == 'refs/heads/main' && success()
+    if: 
+      github.ref == 'refs/heads/main' &&
+      needs.tests.outputs.coverage >= 80 &&
+      success()
 
     steps:
       - name: Checkout

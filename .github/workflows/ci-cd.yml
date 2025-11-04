@@ -44,8 +44,11 @@ jobs:
       
       - name: Save Coverage Percentage
         run: |
-          COVERAGE=$(grep -oP '(?<=line-rate=")[0-9.]+(?=")' coverage.xml)
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+          COVERAGE=$(xmllint --xpath "string(/coverage/@line-rate)" coverage.xml)
+          echo "Coverage: $COVERAGE"
           echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
 
       - name: Upload Coverage Badge to Gist
         if: github.ref == 'refs/heads/main'

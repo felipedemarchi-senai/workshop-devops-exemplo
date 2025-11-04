@@ -22,8 +22,42 @@ jobs:
         run: |
           pip install -r requirements-dev.txt
 
-      - name: Run tests
-        run: pytest -v
+      - name: Run Tests + Coverage + HTML Report
+        run: |
+          pytest \
+            --cov=. \
+            --cov-report=xml \
+            --html=test-report.html \
+            --self-contained-html
+      
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test-report.html
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-xml
+          path: coverage.xml
+      
+      - name: Save Coverage Percentage
+        run: |
+          COVERAGE=$(grep -oP '(?<=line-rate=")[0-9.]+(?=")' coverage.xml)
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            - name: Upload Coverage Badge to Gist
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          COVERAGE=$(grep -oP '(?<=line-rate=")[0-9.]+(?=")' coverage.xml)
+          PERCENT=$(echo "$COVERAGE*100" | bc | cut -d'.' -f1)
+          curl -X POST "https://api.github.com/gists/27bfb7ba18da11fec73a66f189ac7ea3" \
+          -H "Authorization: token $GH_TOKEN" \
+          -d "{\"files\": {\"coverage.json\": {\"content\": \"$PERCENT\"}}}"
+
+
 
 
   deploy:

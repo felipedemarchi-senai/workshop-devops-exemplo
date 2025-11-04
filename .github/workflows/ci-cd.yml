@@ -67,7 +67,7 @@ jobs:
           echo "Coverage: $COV%"
           echo "Percent: $PERCENT%"
           
-          JSON=$(jq -n --arg cov "$PERCENT" '{"files": {"coverage.json": {"content": $cov}}}')
+          JSON=$(jq -n --arg cov "$PERCENT" '{"files": {"coverage.json": {"content": { "coverage": $cov}}}}')
           
           curl -X PATCH \
             -H "Authorization: Bearer $GH_TOKEN" \
